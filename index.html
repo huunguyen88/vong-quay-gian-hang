@@ -9,6 +9,7 @@
     .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
     .button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
     .button:disabled { background-color: #ccc; cursor: not-allowed; }
+    .reset { background-color: #dc3545; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
@@ -20,6 +21,7 @@
     <h2>Vòng Quay Gian Hàng</h2>
     <input type="text" id="nameInput" placeholder="Nhập tên của bạn" />
     <button id="spinButton" class="button">Quay Vòng</button>
+    <button id="resetButton" class="button reset">Reset Dữ Liệu</button>
     <p id="result">Kết quả sẽ hiển thị ở đây.</p>
   </div>
 
@@ -49,14 +51,20 @@
       "Gian hàng 13", "Gian hàng 14", "Gian hàng 15", "Gian hàng 16"
     ];
 
-    let remainingBooths = [...boothPositions];
-    const results = [];
+    let remainingBooths = JSON.parse(localStorage.getItem("remainingBooths")) || [...boothPositions];
+    let results = JSON.parse(localStorage.getItem("results")) || [];
 
     const nameInput = document.getElementById("nameInput");
     const resultText = document.getElementById("result");
     const resultTable = document.getElementById("resultTable");
     const remainingText = document.getElementById("remainingBooths");
     const spinButton = document.getElementById("spinButton");
+    const resetButton = document.getElementById("resetButton");
+
+    function updateLocalStorage() {
+      localStorage.setItem("remainingBooths", JSON.stringify(remainingBooths));
+      localStorage.setItem("results", JSON.stringify(results));
+    }
 
     function updateRemainingText() {
       remainingText.textContent = remainingBooths.length > 0 ? remainingBooths.join(", ") : "Đã hết gian hàng.";
@@ -89,12 +97,26 @@
 
       updateResultTable();
       updateRemainingText();
+      updateLocalStorage();
 
       if (remainingBooths.length === 0) {
         spinButton.disabled = true;
       }
     });
 
+    resetButton.addEventListener("click", () => {
+      if (confirm("Bạn có chắc chắn muốn reset dữ liệu?")) {
+        remainingBooths = [...boothPositions];
+        results = [];
+        updateResultTable();
+        updateRemainingText();
+        localStorage.clear();
+        resultText.textContent = "Dữ liệu đã được reset.";
+        spinButton.disabled = false;
+      }
+    });
+
+    updateResultTable();
     updateRemainingText();
   </script>
 </body>
