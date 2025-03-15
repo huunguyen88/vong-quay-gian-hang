@@ -48,7 +48,7 @@
 
     async function fetchAssignedBooths() {
       try {
-        console.log("Đang gửi yêu cầu GET tới:", `${scriptURL}?action=get`);
+        console.log("Gửi GET tới:", `${scriptURL}?action=get`);
         const response = await fetch(`${scriptURL}?action=get`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
@@ -56,7 +56,7 @@
         assignedBooths = data.assigned || [];
         updateRemainingText();
       } catch (error) {
-        console.error("Lỗi tải dữ liệu:", error.message);
+        console.error("Lỗi tải dữ liệu:", error);
         remainingText.textContent = "Không thể tải dữ liệu: " + error.message;
       }
     }
@@ -87,7 +87,7 @@
       const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
       try {
-        console.log("Đang gửi POST:", { action: "assign", name, booth: selectedBooth });
+        console.log("Gửi POST:", { action: "assign", name, booth: selectedBooth });
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -95,7 +95,7 @@
         });
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        console.log("Phản hồi từ server:", data);
+        console.log("Phản hồi:", data);
         if (data.success) {
           assignedBooths.push(selectedBooth);
           resultText.textContent = `${name} đã nhận ${selectedBooth}`;
@@ -105,7 +105,7 @@
           resultText.textContent = "Có lỗi xảy ra: " + (data.error || "Không rõ lỗi");
         }
       } catch (error) {
-        console.error("Lỗi gửi dữ liệu:", error.message);
+        console.error("Lỗi gửi dữ liệu:", error);
         resultText.textContent = "Không thể kết nối server: " + error.message;
       } finally {
         spinButton.disabled = false;
@@ -121,12 +121,13 @@
       resetButton.textContent = "Đang reset...";
 
       try {
-        console.log("Đang gửi POST reset:", { action: "reset", password });
+        console.log("Gửi POST reset:", { action: "reset", password });
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "reset", password: password })
         });
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         console.log("Phản hồi reset:", data);
         if (data.success) {
@@ -137,7 +138,7 @@
           alert("Mật khẩu sai hoặc có lỗi: " + (data.error || "Không rõ lỗi"));
         }
       } catch (error) {
-        console.error("Lỗi reset dữ liệu:", error.message);
+        console.error("Lỗi reset dữ liệu:", error);
         resultText.textContent = "Không thể reset dữ liệu: " + error.message;
       } finally {
         resetButton.disabled = false;
