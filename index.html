@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,19 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vòng Quay Gian Hàng</title>
   <style>
-    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
-    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f0f0f0; }
+    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
     .button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
     .button:disabled { background-color: #ccc; cursor: not-allowed; }
-    .remaining { margin-top: 10px; color: #555; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    input { padding: 8px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>Vòng Quay Gian Hàng</h2>
-    <p id="result">Nhấn quay để chọn gian hàng!</p>
+    <input type="text" id="nameInput" placeholder="Nhập tên của bạn" />
     <button id="spinButton" class="button">Quay Vòng</button>
-    <p id="remaining" class="remaining"></p>
+    <p id="result">Kết quả sẽ hiển thị ở đây.</p>
+  </div>
+
+  <div class="card">
+    <h3>Kết Quả Đã Quay</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Tên Đối Tác</th>
+          <th>Gian Hàng</th>
+        </tr>
+      </thead>
+      <tbody id="resultTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Gian Hàng Còn Lại</h3>
+    <p id="remainingBooths"></p>
   </div>
 
   <script>
@@ -30,28 +50,49 @@
     ];
 
     let remainingBooths = [...boothPositions];
+    const results = [];
+
+    const nameInput = document.getElementById("nameInput");
     const resultText = document.getElementById("result");
-    const remainingText = document.getElementById("remaining");
+    const resultTable = document.getElementById("resultTable");
+    const remainingText = document.getElementById("remainingBooths");
     const spinButton = document.getElementById("spinButton");
 
     function updateRemainingText() {
-      if (remainingBooths.length > 0) {
-        remainingText.textContent = `Còn lại: ${remainingBooths.join(", ")}`;
-      } else {
-        remainingText.textContent = "Đã hết gian hàng.";
-      }
+      remainingText.textContent = remainingBooths.length > 0 ? remainingBooths.join(", ") : "Đã hết gian hàng.";
+    }
+
+    function updateResultTable() {
+      resultTable.innerHTML = results.map(r => `<tr><td>${r.name}</td><td>${r.booth}</td></tr>`).join("");
     }
 
     spinButton.addEventListener("click", () => {
-      if (remainingBooths.length === 0) return;
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Vui lòng nhập tên trước khi quay!");
+        return;
+      }
+
+      if (remainingBooths.length === 0) {
+        alert("Tất cả gian hàng đã được chọn.");
+        return;
+      }
+
       const randomIndex = Math.floor(Math.random() * remainingBooths.length);
       const selectedBooth = remainingBooths[randomIndex];
-      resultText.textContent = `Đã chọn: ${selectedBooth}`;
+
+      results.push({ name, booth: selectedBooth });
       remainingBooths.splice(randomIndex, 1);
+
+      resultText.textContent = `${name} đã nhận ${selectedBooth}`;
+      nameInput.value = "";
+
+      updateResultTable();
+      updateRemainingText();
+
       if (remainingBooths.length === 0) {
         spinButton.disabled = true;
       }
-      updateRemainingText();
     });
 
     updateRemainingText();
