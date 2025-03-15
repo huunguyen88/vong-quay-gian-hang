@@ -44,17 +44,16 @@
 
     let assignedBooths = [];
 
-    function fetchAssignedBooths() {
-      fetch(scriptURL + "?action=get")
-        .then(response => response.json())
-        .then(data => {
-          assignedBooths = data.assigned || [];
-          updateRemainingText();
-        })
-        .catch(error => {
-          console.error("Lỗi tải dữ liệu:", error);
-          remainingText.textContent = "Không thể tải dữ liệu.";
-        });
+    async function fetchAssignedBooths() {
+      try {
+        const response = await fetch(`${scriptURL}?action=get`);
+        const data = await response.json();
+        assignedBooths = data.assigned || [];
+        updateRemainingText();
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
+        remainingText.textContent = "Không thể tải dữ liệu.";
+      }
     }
 
     function updateRemainingText() {
@@ -63,7 +62,7 @@
       spinButton.disabled = remaining.length === 0;
     }
 
-    spinButton.addEventListener("click", () => {
+    spinButton.addEventListener("click", async () => {
       const name = nameInput.value.trim();
       const availableBooths = boothPositions.filter(b => !assignedBooths.includes(b));
 
@@ -74,13 +73,13 @@
 
       const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
-      fetch(scriptURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth })
-      })
-      .then(response => response.json())
-      .then(data => {
+      try {
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth })
+        });
+        const data = await response.json();
         if (data.success) {
           assignedBooths.push(selectedBooth);
           resultText.textContent = `${name} đã nhận ${selectedBooth}`;
@@ -89,18 +88,25 @@
         } else {
           console.error("Lỗi gửi dữ liệu:", data.error);
         }
-      })
-      .catch(error => console.error("Lỗi gửi dữ liệu:", error));
+      } catch (error) {
+        console.error("Lỗi gửi dữ liệu:", error);
+      }
     });
 
-    resetButton.addEventListener("click", () => {
+    resetButton.addEventListener("click", async () => {
       const password = prompt("Nhập mật khẩu để reset dữ liệu:");
       if (password === "matkhaula123") {
-        fetch(scriptURL + "?reset=true").then(() => {
-          assignedBooths = [];
-          updateRemainingText();
-          resultText.textContent = "Dữ liệu đã được reset.";
-        }).catch(error => console.error("Lỗi reset dữ liệu:", error));
+        try {
+          const response = await fetch(`${scriptURL}?action=reset`);
+          const data = await response.json();
+          if (data.success) {
+            assignedBooths = [];
+            updateRemainingText();
+            resultText.textContent = "Dữ liệu đã được reset.";
+          }
+        } catch (error) {
+          console.error("Lỗi reset dữ liệu:", error);
+        }
       } else {
         alert("Mật khẩu sai!");
       }
