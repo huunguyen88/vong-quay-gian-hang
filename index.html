@@ -10,9 +10,6 @@
     .button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
     .button:disabled { background-color: #ccc; cursor: not-allowed; }
     .reset { background-color: #dc3545; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    th { background-color: #f2f2f2; }
     input { padding: 8px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
   </style>
 </head>
@@ -26,102 +23,65 @@
   </div>
 
   <div class="card">
-    <h3>Kết Quả Đã Quay</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Tên Đối Tác</th>
-          <th>Gian Hàng</th>
-        </tr>
-      </thead>
-      <tbody id="resultTable"></tbody>
-    </table>
-  </div>
-
-  <div class="card">
     <h3>Gian Hàng Còn Lại</h3>
     <p id="remainingBooths"></p>
   </div>
 
   <script>
-    const boothPositions = [
+    const scriptURL = "https://script.google.com/macros/s/AKfycbz5q_ZD5Rg4XS8hCsjTJG2aUHz3j4Vujvg86eFaSfAxTQpfIt2GFufTzH2h9OydwuIJ/exec";
+    let boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
       "Gian hàng 5", "Gian hàng 6", "Gian hàng 7", "Gian hàng 8",
       "Gian hàng 9", "Gian hàng 10", "Gian hàng 11", "Gian hàng 12",
       "Gian hàng 13", "Gian hàng 14", "Gian hàng 15", "Gian hàng 16"
     ];
 
-    let remainingBooths = JSON.parse(localStorage.getItem("remainingBooths")) || [...boothPositions];
-    let results = JSON.parse(localStorage.getItem("results")) || [];
-
     const nameInput = document.getElementById("nameInput");
     const resultText = document.getElementById("result");
-    const resultTable = document.getElementById("resultTable");
     const remainingText = document.getElementById("remainingBooths");
     const spinButton = document.getElementById("spinButton");
     const resetButton = document.getElementById("resetButton");
 
-    function updateLocalStorage() {
-      localStorage.setItem("remainingBooths", JSON.stringify(remainingBooths));
-      localStorage.setItem("results", JSON.stringify(results));
-    }
+    let assignedBooths = [];
 
     function updateRemainingText() {
-      remainingText.textContent = remainingBooths.length > 0 ? remainingBooths.join(", ") : "Đã hết gian hàng.";
-    }
-
-    function updateResultTable() {
-      resultTable.innerHTML = results.map(r => `<tr><td>${r.name}</td><td>${r.booth}</td></tr>`).join("");
+      const remaining = boothPositions.filter(b => !assignedBooths.includes(b));
+      remainingText.textContent = remaining.length > 0 ? remaining.join(", ") : "Đã hết gian hàng.";
+      spinButton.disabled = remaining.length === 0;
     }
 
     spinButton.addEventListener("click", () => {
       const name = nameInput.value.trim();
-      if (!name) {
-        alert("Vui lòng nhập tên trước khi quay!");
-        return;
-      }
+      const availableBooths = boothPositions.filter(b => !assignedBooths.includes(b));
 
-      if (remainingBooths.length === 0) {
-        alert("Tất cả gian hàng đã được chọn.");
-        return;
-      }
+      if (!name || availableBooths.length === 0) return;
 
-      const randomIndex = Math.floor(Math.random() * remainingBooths.length);
-      const selectedBooth = remainingBooths[randomIndex];
+      const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
-      results.push({ name, booth: selectedBooth });
-      remainingBooths.splice(randomIndex, 1);
-
-      resultText.textContent = `${name} đã nhận ${selectedBooth}`;
-      nameInput.value = "";
-
-      updateResultTable();
-      updateRemainingText();
-      updateLocalStorage();
-
-      if (remainingBooths.length === 0) {
-        spinButton.disabled = true;
-      }
+      fetch(scriptURL, {
+        method: "POST",
+        body: new URLSearchParams({ name, booth: selectedBooth })
+      }).then(() => {
+        assignedBooths.push(selectedBooth);
+        resultText.textContent = `${name} đã nhận ${selectedBooth}`;
+        nameInput.value = "";
+        updateRemainingText();
+      });
     });
 
     resetButton.addEventListener("click", () => {
       const password = prompt("Nhập mật khẩu để reset dữ liệu:");
       if (password === "matkhaula123") {
-        if (confirm("Bạn có chắc chắn muốn reset dữ liệu?")) {
-          remainingBooths = [...boothPositions];
-          results = [];
-          updateResultTable();
+        fetch(scriptURL + "?reset=true").then(() => {
+          assignedBooths = [];
           updateRemainingText();
-          localStorage.clear();
           resultText.textContent = "Dữ liệu đã được reset.";
-          spinButton.disabled = false;
-        }
+        });
       } else {
-        alert("Mật khẩu không đúng!");
+        alert("Mật khẩu sai!");
       }
     });
 
-    updateResultTable();
     updateRemainingText();
   </script>
 </body>
