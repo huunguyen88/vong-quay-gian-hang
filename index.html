@@ -30,7 +30,7 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxn9GKlwd1G-W2l7v0EWTZEr51ZzvrjLTcJgTrQj7YuDY7QaUfk0TZpQDG9MK4JI5EO/exec"; // Thay bằng URL mới
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxn9GKlwd1G-W2l7v0EWTZEr51ZzvrjLTcJgTrQj7YuDY7QaUfk0TZpQDG9MK4JI5EO/exec";
     let boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
       "Gian hàng 5", "Gian hàng 6", "Gian hàng 7", "Gian hàng 8",
@@ -93,10 +93,12 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth }),
-          redirect: "follow"
+          redirect: "follow",
+          credentials: "omit" // Thử tránh vấn đề xác thực
         });
         if (!response.ok) {
           const errorText = await response.text();
+          console.error("Phản hồi lỗi từ server:", errorText);
           throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorText}`);
         }
         const data = await response.json();
@@ -132,10 +134,12 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "reset", password: password }),
-          redirect: "follow"
+          redirect: "follow",
+          credentials: "omit"
         });
         if (!response.ok) {
           const errorText = await response.text();
+          console.error("Phản hồi lỗi từ server:", errorText);
           throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorText}`);
         }
         const data = await response.json();
