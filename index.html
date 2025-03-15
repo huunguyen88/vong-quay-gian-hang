@@ -60,7 +60,8 @@
 
       fetch(scriptURL, {
         method: "POST",
-        body: new URLSearchParams({ name, booth: selectedBooth })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, booth: selectedBooth })
       }).then(() => {
         assignedBooths.push(selectedBooth);
         resultText.textContent = `${name} đã nhận ${selectedBooth}`;
