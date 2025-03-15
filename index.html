@@ -77,12 +77,16 @@
       fetch(scriptURL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, booth: selectedBooth })
-      }).then(() => {
-        assignedBooths.push(selectedBooth);
-        resultText.textContent = `${name} đã nhận ${selectedBooth}`;
-        nameInput.value = "";
-        updateRemainingText();
+        body: JSON.stringify({ name: name, booth: selectedBooth })
+      }).then(response => {
+        if (response.ok) {
+          assignedBooths.push(selectedBooth);
+          resultText.textContent = `${name} đã nhận ${selectedBooth}`;
+          nameInput.value = "";
+          updateRemainingText();
+        } else {
+          console.error("Lỗi gửi dữ liệu:", response.statusText);
+        }
       }).catch(error => console.error("Lỗi gửi dữ liệu:", error));
     });
 
