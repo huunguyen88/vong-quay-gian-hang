@@ -30,7 +30,7 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbw6Cy_PEaoIbUs1LzH-pYV2qHNSJWYmNyJs5bq3ZfAKe_4ycJk10e_ODE9invYLOH64/exec";
+    const scriptURL = "https://script.google.com/macros/library/d/1suvglj1s9nGogPuNfo8AzNLOPuiHdOQshzBCMLbyTWyZfrHg3kHIZSJd/13";
     let boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
       "Gian hàng 5", "Gian hàng 6", "Gian hàng 7", "Gian hàng 8",
@@ -87,15 +87,20 @@
       const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
       try {
-        console.log("Gửi POST:", { action: "assign", name, booth: selectedBooth });
+        console.log("Gửi POST tới:", scriptURL);
+        console.log("Dữ liệu gửi:", { action: "assign", name, booth: selectedBooth });
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth })
+          body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth }),
+          redirect: "follow" // Thử xử lý redirect nếu có
         });
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorText}`);
+        }
         const data = await response.json();
-        console.log("Phản hồi:", data);
+        console.log("Phản hồi từ server:", data);
         if (data.success) {
           assignedBooths.push(selectedBooth);
           resultText.textContent = `${name} đã nhận ${selectedBooth}`;
@@ -121,13 +126,18 @@
       resetButton.textContent = "Đang reset...";
 
       try {
-        console.log("Gửi POST reset:", { action: "reset", password });
+        console.log("Gửi POST reset tới:", scriptURL);
+        console.log("Dữ liệu gửi:", { action: "reset", password });
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "reset", password: password })
+          body: JSON.stringify({ action: "reset", password: password }),
+          redirect: "follow"
         });
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorText}`);
+        }
         const data = await response.json();
         console.log("Phản hồi reset:", data);
         if (data.success) {
