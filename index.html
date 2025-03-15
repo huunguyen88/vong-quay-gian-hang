@@ -24,7 +24,7 @@
 
   <div class="card">
     <h3>Gian Hàng Còn Lại</h3>
-    <p id="remainingBooths"></p>
+    <p id="remainingBooths">Đang tải...</p>
   </div>
 
   <script>
@@ -44,6 +44,19 @@
 
     let assignedBooths = [];
 
+    function fetchAssignedBooths() {
+      fetch(scriptURL + "?action=get")
+        .then(response => response.json())
+        .then(data => {
+          assignedBooths = data.assigned || [];
+          updateRemainingText();
+        })
+        .catch(error => {
+          console.error("Lỗi tải dữ liệu:", error);
+          remainingText.textContent = "Không thể tải dữ liệu.";
+        });
+    }
+
     function updateRemainingText() {
       const remaining = boothPositions.filter(b => !assignedBooths.includes(b));
       remainingText.textContent = remaining.length > 0 ? remaining.join(", ") : "Đã hết gian hàng.";
@@ -54,7 +67,10 @@
       const name = nameInput.value.trim();
       const availableBooths = boothPositions.filter(b => !assignedBooths.includes(b));
 
-      if (!name || availableBooths.length === 0) return;
+      if (!name || availableBooths.length === 0) {
+        alert("Hãy nhập tên và đảm bảo còn gian hàng trống!");
+        return;
+      }
 
       const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
@@ -67,7 +83,7 @@
         resultText.textContent = `${name} đã nhận ${selectedBooth}`;
         nameInput.value = "";
         updateRemainingText();
-      });
+      }).catch(error => console.error("Lỗi gửi dữ liệu:", error));
     });
 
     resetButton.addEventListener("click", () => {
@@ -77,13 +93,13 @@
           assignedBooths = [];
           updateRemainingText();
           resultText.textContent = "Dữ liệu đã được reset.";
-        });
+        }).catch(error => console.error("Lỗi reset dữ liệu:", error));
       } else {
         alert("Mật khẩu sai!");
       }
     });
 
-    updateRemainingText();
+    fetchAssignedBooths();
   </script>
 </body>
 </html>
