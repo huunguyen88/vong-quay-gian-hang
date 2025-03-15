@@ -105,14 +105,19 @@
     });
 
     resetButton.addEventListener("click", () => {
-      if (confirm("Bạn có chắc chắn muốn reset dữ liệu?")) {
-        remainingBooths = [...boothPositions];
-        results = [];
-        updateResultTable();
-        updateRemainingText();
-        localStorage.clear();
-        resultText.textContent = "Dữ liệu đã được reset.";
-        spinButton.disabled = false;
+      const password = prompt("Nhập mật khẩu để reset dữ liệu:");
+      if (password === "matkhaula123") {
+        if (confirm("Bạn có chắc chắn muốn reset dữ liệu?")) {
+          remainingBooths = [...boothPositions];
+          results = [];
+          updateResultTable();
+          updateRemainingText();
+          localStorage.clear();
+          resultText.textContent = "Dữ liệu đã được reset.";
+          spinButton.disabled = false;
+        }
+      } else {
+        alert("Mật khẩu không đúng!");
       }
     });
 
