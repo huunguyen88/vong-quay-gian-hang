@@ -13,6 +13,10 @@
     input { padding: 8px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
     #result { color: #333; font-weight: bold; }
     #remainingBooths { color: #555; }
+    #history { margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #f2f2f2; }
   </style>
 </head>
 <body>
@@ -29,9 +33,39 @@
     <p id="remainingBooths">Đang tải...</p>
   </div>
 
+  <div class="card" id="history">
+    <h3>Lịch Sử Phân Bổ</h3>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Tên Đối Tác</th>
+          <th>Gian Hàng</th>
+          <th>Thời Gian</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxn9GKlwd1G-W2l7v0EWTZEr51ZzvrjLTcJgTrQj7YuDY7QaUfk0TZpQDG9MK4JI5EO/exec";
-    let boothPositions = [
+    // Cấu hình Firebase (thay bằng thông tin từ Firebase Console)
+    const firebaseConfig = {
+  apiKey: "AIzaSyDP7duHDS42KvfWdQoPUhWRb6KS7JsWSnQ",
+  authDomain: "vongquaygianhang.firebaseapp.com",
+  projectId: "vongquaygianhang",
+  storageBucket: "vongquaygianhang.firebasestorage.app",
+  messagingSenderId: "342112387903",
+  appId: "1:342112387903:web:449fa387330dd195ce098a"
+};
+
+    // Khởi tạo Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
       "Gian hàng 5", "Gian hàng 6", "Gian hàng 7", "Gian hàng 8",
       "Gian hàng 9", "Gian hàng 10", "Gian hàng 11", "Gian hàng 12",
@@ -43,18 +77,17 @@
     const remainingText = document.getElementById("remainingBooths");
     const spinButton = document.getElementById("spinButton");
     const resetButton = document.getElementById("resetButton");
+    const historyBody = document.getElementById("historyBody");
 
-    let assignedBooths = [];
+    let assignedData = [];
 
+    // Lấy dữ liệu từ Firestore
     async function fetchAssignedBooths() {
       try {
-        console.log("Gửi GET tới:", `${scriptURL}?action=get`);
-        const response = await fetch(`${scriptURL}?action=get`);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-        console.log("Dữ liệu nhận được:", data);
-        assignedBooths = data.assigned || [];
+        const snapshot = await db.collection("assignments").get();
+        assignedData = snapshot.docs.map(doc => doc.data());
         updateRemainingText();
+        updateHistoryTable();
       } catch (error) {
         console.error("Lỗi tải dữ liệu:", error);
         remainingText.textContent = "Không thể tải dữ liệu: " + error.message;
@@ -62,14 +95,28 @@
     }
 
     function updateRemainingText() {
+      const assignedBooths = assignedData.map(item => item.booth);
       const remaining = boothPositions.filter(b => !assignedBooths.includes(b));
       remainingText.textContent = remaining.length > 0 ? remaining.join(", ") : "Đã hết gian hàng.";
       spinButton.disabled = remaining.length === 0;
     }
 
+    function updateHistoryTable() {
+      historyBody.innerHTML = "";
+      assignedData.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.booth}</td>
+          <td>${item.time}</td>
+        `;
+        historyBody.appendChild(row);
+      });
+    }
+
     spinButton.addEventListener("click", async () => {
       const name = nameInput.value.trim();
-      const availableBooths = boothPositions.filter(b => !assignedBooths.includes(b));
+      const availableBooths = boothPositions.filter(b => !assignedData.map(item => item.booth).includes(b));
 
       if (!name) {
         alert("Vui lòng nhập tên đối tác!");
@@ -84,36 +131,21 @@
       spinButton.textContent = "Đang quay...";
       resultText.textContent = "Đang xử lý...";
 
-      const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
-
       try {
-        console.log("Gửi POST tới:", scriptURL);
-        console.log("Dữ liệu gửi:", JSON.stringify({ action: "assign", name, booth: selectedBooth }));
-        const response = await fetch(scriptURL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth }),
-          redirect: "follow",
-          credentials: "omit" // Thử tránh vấn đề xác thực
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Phản hồi lỗi từ server:", errorText);
-          throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorText}`);
-        }
-        const data = await response.json();
-        console.log("Phản hồi từ server:", data);
-        if (data.success) {
-          assignedBooths.push(selectedBooth);
-          resultText.textContent = `${name} đã nhận ${selectedBooth}`;
-          nameInput.value = "";
-          updateRemainingText();
-        } else {
-          resultText.textContent = "Có lỗi xảy ra: " + (data.error || "Không rõ lỗi");
-        }
+        const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
+        const time = new Date().toLocaleString("vi-VN");
+        const newAssignment = { name, booth: selectedBooth, time };
+
+        await db.collection("assignments").add(newAssignment);
+        assignedData.push(newAssignment);
+
+        resultText.textContent = `${name} đã nhận ${selectedBooth}`;
+        nameInput.value = "";
+        updateRemainingText();
+        updateHistoryTable();
       } catch (error) {
-        console.error("Lỗi gửi dữ liệu:", error);
-        resultText.textContent = "Không thể kết nối server: " + error.message;
+        console.error("Lỗi khi quay:", error);
+        resultText.textContent = "Lỗi: " + error.message;
       } finally {
         spinButton.disabled = false;
         spinButton.textContent = "Quay Vòng";
@@ -122,44 +154,34 @@
 
     resetButton.addEventListener("click", async () => {
       const password = prompt("Nhập mật khẩu để reset dữ liệu:");
-      if (!password) return;
+      if (password !== "matkhaula123") {
+        alert("Mật khẩu sai!");
+        return;
+      }
 
       resetButton.disabled = true;
       resetButton.textContent = "Đang reset...";
 
       try {
-        console.log("Gửi POST reset tới:", scriptURL);
-        console.log("Dữ liệu gửi:", JSON.stringify({ action: "reset", password }));
-        const response = await fetch(scriptURL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "reset", password: password }),
-          redirect: "follow",
-          credentials: "omit"
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Phản hồi lỗi từ server:", errorText);
-          throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorText}`);
-        }
-        const data = await response.json();
-        console.log("Phản hồi reset:", data);
-        if (data.success) {
-          assignedBooths = [];
-          updateRemainingText();
-          resultText.textContent = "Dữ liệu đã được reset.";
-        } else {
-          alert("Mật khẩu sai hoặc có lỗi: " + (data.error || "Không rõ lỗi"));
-        }
+        const snapshot = await db.collection("assignments").get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+
+        assignedData = [];
+        resultText.textContent = "Dữ liệu đã được reset.";
+        updateRemainingText();
+        updateHistoryTable();
       } catch (error) {
-        console.error("Lỗi reset dữ liệu:", error);
-        resultText.textContent = "Không thể reset dữ liệu: " + error.message;
+        console.error("Lỗi reset:", error);
+        resultText.textContent = "Lỗi reset: " + error.message;
       } finally {
         resetButton.disabled = false;
         resetButton.textContent = "Reset Dữ Liệu";
       }
     });
 
+    // Khởi tạo giao diện
     fetchAssignedBooths();
   </script>
 </body>
