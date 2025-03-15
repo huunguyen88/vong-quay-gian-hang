@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,12 +11,14 @@
     .button:disabled { background-color: #ccc; cursor: not-allowed; }
     .reset { background-color: #dc3545; }
     input { padding: 8px; width: 100%; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    #result { color: #333; font-weight: bold; }
+    #remainingBooths { color: #555; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>Vòng Quay Gian Hàng</h2>
-    <input type="text" id="nameInput" placeholder="Nhập tên của bạn" />
+    <input type="text" id="nameInput" placeholder="Nhập tên đối tác" />
     <button id="spinButton" class="button">Quay Vòng</button>
     <button id="resetButton" class="button reset">Reset Dữ Liệu</button>
     <p id="result">Kết quả sẽ hiển thị ở đây.</p>
@@ -28,7 +30,8 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyII9FtSR-9JIPPU4b7TNPDoMUb35_fSU68hhlNjt9e5YlxyQXJ5jTmWHrMLw3cCJIj/exec";
+    // Thay URL này bằng URL từ Google Apps Script sau khi triển khai
+    const scriptURL = "https://script.google.com/macros/s/AKfycbz3YVhaEkSjx_SM2vy_14gKv45kHZOGbQGJ97Cx5_SpowV-7Du-cRz8Mbz4XYb277lQ/exec";
     let boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
       "Gian hàng 5", "Gian hàng 6", "Gian hàng 7", "Gian hàng 8",
@@ -66,10 +69,18 @@
       const name = nameInput.value.trim();
       const availableBooths = boothPositions.filter(b => !assignedBooths.includes(b));
 
-      if (!name || availableBooths.length === 0) {
-        alert("Hãy nhập tên và đảm bảo còn gian hàng trống!");
+      if (!name) {
+        alert("Vui lòng nhập tên đối tác!");
         return;
       }
+      if (availableBooths.length === 0) {
+        alert("Đã hết gian hàng!");
+        return;
+      }
+
+      spinButton.disabled = true;
+      spinButton.textContent = "Đang quay...";
+      resultText.textContent = "Đang xử lý...";
 
       const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
@@ -86,29 +97,46 @@
           nameInput.value = "";
           updateRemainingText();
         } else {
+          resultText.textContent = "Có lỗi xảy ra, vui lòng thử lại!";
           console.error("Lỗi gửi dữ liệu:", data.error);
         }
       } catch (error) {
+        resultText.textContent = "Không thể kết nối server!";
         console.error("Lỗi gửi dữ liệu:", error);
+      } finally {
+        spinButton.disabled = false;
+        spinButton.textContent = "Quay Vòng";
       }
     });
 
     resetButton.addEventListener("click", async () => {
       const password = prompt("Nhập mật khẩu để reset dữ liệu:");
-      if (password === "matkhaula123") {
-        try {
-          const response = await fetch(`${scriptURL}?action=reset`);
-          const data = await response.json();
-          if (data.success) {
-            assignedBooths = [];
-            updateRemainingText();
-            resultText.textContent = "Dữ liệu đã được reset.";
-          }
-        } catch (error) {
-          console.error("Lỗi reset dữ liệu:", error);
+      if (!password) return;
+
+      resetButton.disabled = true;
+      resetButton.textContent = "Đang reset...";
+
+      try {
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "reset", password: password })
+        });
+        const data = await response.json();
+        if (data.success) {
+          assignedBooths = [];
+          updateRemainingText();
+          resultText.textContent = "Dữ liệu đã được reset.";
+        } else {
+          alert("Mật khẩu sai hoặc có lỗi!");
+          console.error("Lỗi reset dữ liệu:", data.error);
         }
-      } else {
-        alert("Mật khẩu sai!");
+      } catch (error) {
+        console.error("Lỗi reset dữ liệu:", error);
+        resultText.textContent = "Không thể reset dữ liệu!";
+      } finally {
+        resetButton.disabled = false;
+        resetButton.textContent = "Reset Dữ Liệu";
       }
     });
 
