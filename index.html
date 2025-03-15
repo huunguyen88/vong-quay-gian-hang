@@ -30,7 +30,7 @@
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyAKIXqPyNoXGqiALC2qSimbU3E0ISIR9GqAXJuhB4sFgMZstCU2VB_1B5Bl1L-UK1b/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxn9GKlwd1G-W2l7v0EWTZEr51ZzvrjLTcJgTrQj7YuDY7QaUfk0TZpQDG9MK4JI5EO/exec"; // Thay bằng URL mới
     let boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
       "Gian hàng 5", "Gian hàng 6", "Gian hàng 7", "Gian hàng 8",
@@ -88,12 +88,12 @@
 
       try {
         console.log("Gửi POST tới:", scriptURL);
-        console.log("Dữ liệu gửi:", { action: "assign", name, booth: selectedBooth });
+        console.log("Dữ liệu gửi:", JSON.stringify({ action: "assign", name, booth: selectedBooth }));
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth }),
-          redirect: "follow" // Thử xử lý redirect nếu có
+          redirect: "follow"
         });
         if (!response.ok) {
           const errorText = await response.text();
@@ -127,7 +127,7 @@
 
       try {
         console.log("Gửi POST reset tới:", scriptURL);
-        console.log("Dữ liệu gửi:", { action: "reset", password });
+        console.log("Dữ liệu gửi:", JSON.stringify({ action: "reset", password }));
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
