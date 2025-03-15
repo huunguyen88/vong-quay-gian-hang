@@ -30,7 +30,6 @@
   </div>
 
   <script>
-    // Thay URL này bằng URL từ Google Apps Script sau khi triển khai
     const scriptURL = "https://script.google.com/macros/s/AKfycbw6Cy_PEaoIbUs1LzH-pYV2qHNSJWYmNyJs5bq3ZfAKe_4ycJk10e_ODE9invYLOH64/exec";
     let boothPositions = [
       "Gian hàng 1", "Gian hàng 2", "Gian hàng 3", "Gian hàng 4",
@@ -49,13 +48,16 @@
 
     async function fetchAssignedBooths() {
       try {
+        console.log("Đang gửi yêu cầu GET tới:", `${scriptURL}?action=get`);
         const response = await fetch(`${scriptURL}?action=get`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
+        console.log("Dữ liệu nhận được:", data);
         assignedBooths = data.assigned || [];
         updateRemainingText();
       } catch (error) {
-        console.error("Lỗi tải dữ liệu:", error);
-        remainingText.textContent = "Không thể tải dữ liệu.";
+        console.error("Lỗi tải dữ liệu:", error.message);
+        remainingText.textContent = "Không thể tải dữ liệu: " + error.message;
       }
     }
 
@@ -85,24 +87,26 @@
       const selectedBooth = availableBooths[Math.floor(Math.random() * availableBooths.length)];
 
       try {
+        console.log("Đang gửi POST:", { action: "assign", name, booth: selectedBooth });
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "assign", name: name, booth: selectedBooth })
         });
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
+        console.log("Phản hồi từ server:", data);
         if (data.success) {
           assignedBooths.push(selectedBooth);
           resultText.textContent = `${name} đã nhận ${selectedBooth}`;
           nameInput.value = "";
           updateRemainingText();
         } else {
-          resultText.textContent = "Có lỗi xảy ra, vui lòng thử lại!";
-          console.error("Lỗi gửi dữ liệu:", data.error);
+          resultText.textContent = "Có lỗi xảy ra: " + (data.error || "Không rõ lỗi");
         }
       } catch (error) {
-        resultText.textContent = "Không thể kết nối server!";
-        console.error("Lỗi gửi dữ liệu:", error);
+        console.error("Lỗi gửi dữ liệu:", error.message);
+        resultText.textContent = "Không thể kết nối server: " + error.message;
       } finally {
         spinButton.disabled = false;
         spinButton.textContent = "Quay Vòng";
@@ -117,23 +121,24 @@
       resetButton.textContent = "Đang reset...";
 
       try {
+        console.log("Đang gửi POST reset:", { action: "reset", password });
         const response = await fetch(scriptURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "reset", password: password })
         });
         const data = await response.json();
+        console.log("Phản hồi reset:", data);
         if (data.success) {
           assignedBooths = [];
           updateRemainingText();
           resultText.textContent = "Dữ liệu đã được reset.";
         } else {
-          alert("Mật khẩu sai hoặc có lỗi!");
-          console.error("Lỗi reset dữ liệu:", data.error);
+          alert("Mật khẩu sai hoặc có lỗi: " + (data.error || "Không rõ lỗi"));
         }
       } catch (error) {
-        console.error("Lỗi reset dữ liệu:", error);
-        resultText.textContent = "Không thể reset dữ liệu!";
+        console.error("Lỗi reset dữ liệu:", error.message);
+        resultText.textContent = "Không thể reset dữ liệu: " + error.message;
       } finally {
         resetButton.disabled = false;
         resetButton.textContent = "Reset Dữ Liệu";
